@@ -778,11 +778,17 @@ class FragmentCallbacksImplementation implements AndroidFragmentCallbacks {
 
         // fixes 'java.lang.IllegalStateException: The specified child already has a parent. You must call removeView() on the child's parent first'.
         // on app resume in nested frame scenarios with support library version greater than 26.0.0
-        const view = fragment.getView();
-        if (view != null) {
-            const viewParent = view.getParent();
-            if (viewParent instanceof android.view.ViewGroup) {
-                viewParent.removeView(view);
+        // NOTE: ensure this is executed only for nested fragments as removing the view for top level fragments
+        //  would break exit animations e.g. for navigation with Flip transition the old(exiting) fragment disappears 
+        // immediately and one can see the flipping new fragment all the way from reverse side to front;
+        // animating nested fragments is half-impossible at the moment either way -- see http://delyan.me/android-s-matryoshka-problem/
+        if (fragment.getParentFragment()) {
+            const view = fragment.getView();
+            if (view != null) {
+                const viewParent = view.getParent();
+                if (viewParent instanceof android.view.ViewGroup) {
+                    viewParent.removeView(view);
+                }
             }
         }
 
